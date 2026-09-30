@@ -6,7 +6,7 @@ Option Explicit
 '  - Regiões Sudeste divididas: Sudeste SP, Sudeste MG e Sudeste RJ/ES
 '  - Leitura dinâmica dos e-mails pela aba Parametros
 '  - Valores mantidos (R$) por mês e valor total informativo (sem débito)
-'  - Filtro rigoroso: ignora estritamente peças "EM TRANSPORTE"
+'  - Filtro rigoroso: considera apenas a coluna "Status" = "Em andamento"
 '  - Agendamento interno configurável (Dia e Horário)
 '  - Assinatura: Nome do Analista (Qualidade - RPTG)
 ' ============================================================================
@@ -238,12 +238,12 @@ Public Sub Atualizar_Base_Em_Andamento()
     Dim wsB As Worksheet, wsE As Worksheet
     Dim dic As Object, dicUF As Object, chave As String, cod As String, uf As String
     Dim dados As Variant, i As Long, ult As Long
-    Dim cCod As Long, cQtd As Long, cVal As Long, cMes As Long, cAno As Long, cGrp As Long, cStatus As Long
+    Dim cCod As Long, cQtd As Long, cVal As Long, cMes As Long, cAno As Long, cStatus As Long
     Dim mes As Long, ano As Long, periodos As Object, itens As Variant
     Dim texto As String, k As Variant
     Dim cMEI As Long, cUF As Long
     Dim regiaoNome As String, emailsCC As String
-    Dim stGrp As String, stItem As String, ehValido As Boolean
+    Dim stItem As String
     Dim valorTotal As Double
 
     Atualizar_Aging_Em_Andamento
@@ -256,17 +256,16 @@ Public Sub Atualizar_Base_Em_Andamento()
     cVal = Coluna(wsB, "Valor_Total")
     cMes = Coluna(wsB, "Mes")
     cAno = Coluna(wsB, "Ano")
-    cGrp = Coluna(wsB, "Grupo_Status")
     cMEI = Coluna(wsB, "MEI")
     cUF = Coluna(wsB, "UF")
     
     cStatus = Coluna(wsB, "Status")
-    If cStatus = 0 Then cStatus = Coluna(wsB, "Status_Chamado")
-    If cStatus = 0 Then cStatus = Coluna(wsB, "Status_OS")
-    If cStatus = 0 Then cStatus = Coluna(wsB, "Descricao_Status")
-    If cStatus = 0 Then cStatus = Coluna(wsB, "Status_Processo")
+    If cStatus = 0 Then
+        AvisarSemColunaStatus
+        Exit Sub
+    End If
     
-    If cCod = 0 Or cQtd = 0 Or cVal = 0 Or cMes = 0 Or cAno = 0 Or (cGrp = 0 And cStatus = 0) Or cUF = 0 Then Exit Sub
+    If cCod = 0 Or cQtd = 0 Or cVal = 0 Or cMes = 0 Or cAno = 0 Or cUF = 0 Then Exit Sub
 
     ult = wsB.Cells(wsB.Rows.Count, cCod).End(xlUp).Row
     If ult < 2 Then Exit Sub
@@ -277,32 +276,9 @@ Public Sub Atualizar_Base_Em_Andamento()
     dados = wsB.Range(wsB.Cells(2, 1), wsB.Cells(ult, wsB.UsedRange.Columns.Count)).Value
 
     For i = 1 To UBound(dados, 1)
-        stGrp = ""
-        stItem = ""
-        
-        If cGrp > 0 Then stGrp = UCase$(Trim$(CStr(dados(i, cGrp))))
-        If cStatus > 0 Then stItem = UCase$(Trim$(CStr(dados(i, cStatus))))
+        stItem = UCase$(Trim$(CStr(dados(i, cStatus))))
 
-        ehValido = False
-        
-        ' 1. Aceita se grupo ou status for EM ANDAMENTO
-        If stGrp = STATUS_ALVO Or stItem = STATUS_ALVO Or stItem = "ANDAMENTO" Then
-            ehValido = True
-        End If
-        
-        ' 2. EXCLUSÃO ESTRITA: Se contiver TRANSPORTE em qualquer campo, descarta
-        If InStr(1, stGrp, "TRANSPORTE") > 0 Or InStr(1, stItem, "TRANSPORTE") > 0 Then
-            ehValido = False
-        End If
-        
-        ' 3. Se houver status detalhado e for coletado / em transporte, descarta
-        If cStatus > 0 And stItem <> "" Then
-            If stItem = "EM TRANSPORTE" Or stItem = "COLETADO" Or InStr(1, stItem, "TRANSPORTE") > 0 Then
-                ehValido = False
-            End If
-        End If
-
-        If ehValido Then
+        If stItem = STATUS_ALVO Then
             cod = ChaveSTA(dados(i, cCod))
             If cod <> "" Then
                 uf = UCase$(Trim$(CStr(dados(i, cUF))))
@@ -381,6 +357,15 @@ Public Sub Atualizar_Base_Em_Andamento()
     End If
 End Sub
 
+Private Sub AvisarSemColunaStatus()
+    If silencioso Then
+        Gravar "Erro: coluna 'Status' não encontrada na aba " & ABA_BASE
+    Else
+        MsgBox "Não encontrei a coluna 'Status' na aba " & ABA_BASE & "." & vbCrLf & _
+               "A cobrança Em Andamento usa somente essa coluna.", vbExclamation, "Coleta Em Andamento"
+    End If
+End Sub
+
 Private Function ChaveSTA(ByVal valor As Variant) As String
     Dim s As String
     s = Trim$(UCase$(CStr(valor)))
@@ -395,25 +380,24 @@ End Function
 
 Public Sub Atualizar_Aging_Em_Andamento()
     Dim ws As Worksheet
-    Dim cGrp As Long, cStatus As Long, cDta As Long, cDias As Long, cFaixa As Long, cCham As Long
+    Dim cStatus As Long, cDta As Long, cDias As Long, cFaixa As Long, cCham As Long
     Dim dados As Variant, dias As Variant, faixa As Variant
     Dim i As Long, ult As Long, n As Long, d As Double, hoje As Double
-    Dim grp As String, stItem As String, ehValido As Boolean, calcAntes As XlCalculation
+    Dim stItem As String, calcAntes As XlCalculation
 
     Set ws = ThisWorkbook.Worksheets(ABA_BASE)
-    cGrp = Coluna(ws, "Grupo_Status")
     cStatus = Coluna(ws, "Status")
-    If cStatus = 0 Then cStatus = Coluna(ws, "Status_Chamado")
-    If cStatus = 0 Then cStatus = Coluna(ws, "Status_OS")
-    If cStatus = 0 Then cStatus = Coluna(ws, "Descricao_Status")
-    If cStatus = 0 Then cStatus = Coluna(ws, "Status_Processo")
+    If cStatus = 0 Then
+        AvisarSemColunaStatus
+        Exit Sub
+    End If
     
     cDta = Coluna(ws, "Dta_Encerramento")
     cDias = Coluna(ws, "Dias_Em_Aberto")
     cFaixa = Coluna(ws, "Faixa_Aging")
     cCham = Coluna(ws, "Chamado")
     
-    If (cGrp = 0 And cStatus = 0) Or cDta = 0 Or cDias = 0 Or cFaixa = 0 Or cCham = 0 Then Exit Sub
+    If cDta = 0 Or cDias = 0 Or cFaixa = 0 Or cCham = 0 Then Exit Sub
 
     ult = ws.Cells(ws.Rows.Count, cCham).End(xlUp).Row
     If ult < 2 Then Exit Sub
@@ -432,20 +416,9 @@ Public Sub Atualizar_Aging_Em_Andamento()
         dias(i, 1) = Empty
         faixa(i, 1) = Empty
         
-        grp = ""
-        stItem = ""
-        If cGrp > 0 Then grp = UCase$(Trim$(CStr(dados(i, cGrp))))
-        If cStatus > 0 Then stItem = UCase$(Trim$(CStr(dados(i, cStatus))))
+        stItem = UCase$(Trim$(CStr(dados(i, cStatus))))
         
-        ehValido = False
-        If grp = STATUS_ALVO Or stItem = STATUS_ALVO Or stItem = "ANDAMENTO" Then
-            ehValido = True
-        End If
-        If InStr(1, grp, "TRANSPORTE") > 0 Or InStr(1, stItem, "TRANSPORTE") > 0 Then
-            ehValido = False
-        End If
-        
-        If ehValido Then
+        If stItem = STATUS_ALVO Then
             If IsDate(dados(i, cDta)) Then
                 d = hoje - CDbl(CDate(dados(i, cDta)))
                 dias(i, 1) = d
