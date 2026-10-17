@@ -85,3 +85,18 @@ Tudo que é específico do ambiente (e-mails, pastas, CNPJ, banner de assinatura
 Excel (tabelas estruturadas, `SUMIFS`, `INDEX/MATCH`, `MAXIFS`, validação de dados, gráficos),
 VBA (Outlook, FileSystemObject, MSXML2 HTTP, `Application.OnTime`), Python (`openpyxl`) para
 geração dos dados fictícios.
+
+---
+
+## 👨‍💻 Sobre mim
+
+Profissional em transição para a área de Tecnologia da Informação, formado em **Sistemas de Informação**, com foco em **automação de processos**, análise de dados e desenvolvimento de soluções utilizando Excel, VBA e Python.
+
+Este projeto demonstra minha experiência prática em transformar processos manuais em fluxos mais organizados e automatizados, com atenção à qualidade dos dados e à eficiência operacional.
+
+## 📄 Currículo profissional
+
+**[Visualizar ou baixar meu currículo em PDF](Curriculo_Jerfferson_Automacao_TI.pdf)**
+
+- [LinkedIn](https://linkedin.com/in/jerfferson-carvalho-b0099a177)
+- [GitHub](https://github.com/jeff2008JsJ)
