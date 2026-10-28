@@ -81,6 +81,10 @@ Tudo que é específico do ambiente (e-mails, pastas, CNPJ, banner de assinatura
 - Os e-mails/domínios (`exemplo.com.br`), CNPJ e caminhos de pasta são placeholders.
 - O rastreio depende do layout do site da transportadora e pode precisar de ajuste.
 
+## Módulo adicional: conferência de Pré-DANFE
+
+Foi adicionada a documentação da automação de conferência de documentos fiscais em PDF/XML, com integração ao Excel e Outlook e orientação de anonimização para portfólio: [Conferência de Pré-DANFE](docs/Conferencia_PreDanfe_Demo.md). O código demonstrativo deve usar somente dados fictícios; regras fiscais precisam de revisão antes de qualquer uso real.
+
 ## Tecnologias
 Excel (tabelas estruturadas, `SUMIFS`, `INDEX/MATCH`, `MAXIFS`, validação de dados, gráficos),
 VBA (Outlook, FileSystemObject, MSXML2 HTTP, `Application.OnTime`), Python (`openpyxl`) para
